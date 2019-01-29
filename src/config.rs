@@ -74,6 +74,8 @@ make_config! {
     mail: Option<MailConfig>,
     templates_folder: String,
     reload_templates: bool,
+    ldap_url: String,
+    ldap_query_string: String, 
 }
 
 fn load_templates(path: &str) -> Handlebars {
@@ -181,7 +183,8 @@ impl Config {
             yubico_client_id: yubico_client_id.unwrap_or("00000".into()),
             yubico_secret_key: yubico_secret_key.unwrap_or("AAAAAAA".into()),
             yubico_server: get_env("YUBICO_SERVER"),
-
+            ldap_url: get_env("LDAP_URL"),
+            ldap_query_string: get_env("LDAP_QUERY_STRING"),
             mail: MailConfig::load(),
         };
 

@@ -1,8 +1,10 @@
 use chrono::{NaiveDateTime, Utc};
 use serde_json::Value;
+use ldap3::LdapConn;
 
 use crate::crypto;
 use crate::CONFIG;
+use crate::ldap3;
 
 #[derive(Debug, Identifiable, Queryable, Insertable)]
 #[table_name = "users"]
@@ -76,12 +78,18 @@ impl User {
     }
 
     pub fn check_valid_password(&self, password: &str) -> bool {
-        crypto::verify_password_hash(
-            password.as_bytes(),
-            &self.salt,
-            &self.password_hash,
-            self.password_iterations as u32,
-        )
+        if CONFIG.ldap_url() == "" {
+            crypto::verify_password_hash(
+                 password.as_bytes(),
+                 &self.salt,
+                 &self.password_hash,
+                 self.password_iterations as u32,
+            )
+        } else {
+            let ldap = LdapConn::new(CONFIG.ldap_url())?;
+            let ldap_cn_string = format!("{}{}{}{}", "cn=", self.name, ",", CONFIG.ldap_search_string)
+            ldap.simple_bind(ldap_cn_string, password)?.success()?;
+        }
     }
 
     pub fn check_valid_recovery_code(&self, recovery_code: &str) -> bool {
